@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社労士 一問一答アプリ</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --success-color: #16a34a;
+            --error-color: #dc2626;
+            --ai-color: #7c3aed;
+            --ai-hover: #6d28d9;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        #stats-info {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 12px;
+        }
+
+        /* ローディング画面 */
+        #loading-view {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.1rem;
+            color: #64748b;
+        }
+
+        /* フィルター・ダッシュボードエリア */
+        .filter-section {
+            margin-bottom: 12px;
+            padding: 12px 16px;
+        }
+        .filter-section h3 {
+            font-size: 0.9rem;
+            margin: 0 0 8px 0;
+            color: #475569;
+        }
+
+        .rank-badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .rank-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: #f1f5f9;
+            transition: all 0.2s;
+        }
+        .rank-badge.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* アコーディオン形式の出題範囲セクション */
+        .tree-toggle-header {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            cursor: pointer;
+            background: #eff6ff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #bfdbfe;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .tree-toggle-header:hover {
+            background: #dbeafe;
+        }
+
+        .tree-container {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            padding: 10px;
+            background: #fff;
+            display: none;
+        }
+        .tree-container.open {
+            display: block;
+        }
+
+        .chapter-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 6px;
+            margin-bottom: 3px;
+            cursor: pointer;
+            color: #1e293b;
+        }
+        .section-label {
+            display: block;
+            font-size: 0.8rem;
+            margin-left: 18px;
+            margin-bottom: 2px;
+            cursor: pointer;
+            color: #475569;
+        }
+
+        /* AI分析用ボタン */
+        .ai-export-container {
+            margin-top: 10px;
+        }
+        .btn-ai {
+            background: var(--ai-color);
+            color: white;
+            width: 100%;
+            font-size: 0.85rem;
+            padding: 6px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .btn-ai:hover {
+            background: var(--ai-hover);
+        }
+
+        /* 問題カード */
+        .question-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 8px;
+            background: #f8fafc;
+            padding: 6px 10px;
+            border-radius: 6px;
+            align-items: center;
+        }
+
+        /* ヒント関連 */
+        .hint-btn-container {
+            margin-bottom: 8px;
+        }
+        .btn-hint {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-hint:hover {
+            background: #fde68a;
+        }
+        .hint-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 0.85rem;
+            color: #78350f;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        .question-text {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        /* メモ欄 */
+        .memo-container {
+            margin-bottom: 12px;
+        }
+        .memo-container label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #475569;
+            margin-bottom: 2px;
+        }
+        .memo-textarea {
+            width: 100%;
+            height: 45px;
+            padding: 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .memo-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* 〇×ボタン */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-true {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .btn-true:hover:not(:disabled) {
+            background: #bbf7d0;
+        }
+
+        .btn-false {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .btn-false:hover:not(:disabled) {
+            background: #fecaca;
+        }
+
+        /* 解答後のボタン強調スタイル */
+        .btn.user-choice {
+            box-shadow: 0 0 0 3px #0f172a !important; /* 自分の選んだ答えを濃い枠線で強調 */
+        }
+        .btn.correct-highlight {
+            border: 3px solid var(--success-color) !important; /* 正解のボタンを緑の太枠で強調 */
+        }
+        .btn:disabled {
+            cursor: default;
+        }
+
+        /* 結果・解説エリア */
+        .result-box {
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .quick-feedback {
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+        .quick-feedback.correct { color: var(--success-color); }
+        .quick-feedback.incorrect { color: var(--error-color); }
+
+        .explanation-text {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: #334155;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        /* ランク手動変更エリア */
+        .rank-change-box {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            background: #f8fafc;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+        .rank-change-box span {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #475569;
+        }
+        .rank-btn {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            transition: all 0.2s;
+        }
+        .rank-btn.current {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* 次へボタン */
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            width: 100%;
+            font-size: 0.95rem;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .next-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>社労士 一問一答</h1>
+        <div id="stats-info">読み込み中...</div>
+    </header>
+
+    <!-- ローディング画面 -->
+    <div id="loading-view" class="card">
+        <p>データをクラウドから取得しています...</p>
+    </div>
+
+    <!-- アプリ本体 -->
+    <div id="app-view" class="hidden">
+        <!-- フィルター設定カード -->
+        <div class="card filter-section">
+            <h3>ランクフィルター</h3>
+            <div class="rank-badges" id="rank-filters">
+                <span class="rank-badge active" data-rank="ALL">すべて</span>
+                <span class="rank-badge" data-rank="A">A 完璧 <span id="count-A">0</span></span>
+                <span class="rank-badge" data-rank="B">B 安心 <span id="count-B">0</span></span>
+                <span class="rank-badge" data-rank="C">C 不安 <span id="count-C">0</span></span>
+                <span class="rank-badge" data-rank="D">D 不正解 <span id="count-D">0</span></span>
+                <span class="rank-badge" data-rank="F">F 未回答 <span id="count-F">0</span></span>
+            </div>
+
+            <!-- 出題範囲（アコーディオン式） -->
+            <div class="tree-toggle-header" onclick="toggleTreeContainer()">
+                <span>📁 出題範囲（章・項目）を選択する</span>
+                <span id="tree-arrow">▼</span>
+            </div>
+            <div class="tree-container" id="checkbox-tree">
+                <!-- 動的に生成されます -->
+            </div>
+
+            <div class="ai-export-container">
+                <button class="btn-ai" onclick="copyLearningDataForAI()">🤖 AI分析用に学習データをコピー</button>
+            </div>
+        </div>
+
+        <!-- 問題出題カード -->
+        <div class="card" id="question-card">
+            <div class="question-meta">
+                <span id="q-id-info">ID: -</span>
+                <span id="q-progress">0 / 0 問</span>
+            </div>
+            
+            <!-- ヒントエリア -->
+            <div class="hint-btn-container" id="hint-container">
+                <button class="btn-hint" onclick="toggleHint()">💡 ヒントを見る</button>
+            </div>
+            <div class="hint-box" id="hint-box">
+                ヒント文がここに表示されます。
+            </div>
+
+            <div class="question-text" id="q-text">
+                問題文がここに表示されます。
+            </div>
+
+            <!-- メモ欄 -->
+            <div class="memo-container">
+                <label for="memo-input">✏️ メモ:</label>
+                <textarea id="memo-input" class="memo-textarea" placeholder="メモを入力..." oninput="updateMemo(this.value)"></textarea>
+            </div>
+
+            <!-- 〇×ボタン (idを追加して状態制御に対応) -->
+            <div class="action-buttons" id="choice-buttons">
+                <button class="btn btn-true" id="btn-true-choice" onclick="answerQuestion(true)">〇</button>
+                <button class="btn btn-false" id="btn-false-choice" onclick="answerQuestion(false)">×</button>
+            </div>
+
+            <!-- 正誤結果 ＋ 解説エリア -->
+            <div class="result-box" id="result-box">
+                <div id="quick-feedback" class="quick-feedback"></div>
+                <div class="explanation-text" id="q-explanation">解説文がここに表示されます。</div>
+            </div>
+
+            <!-- ランク手動変更エリア -->
+            <div class="rank-change-box">
+                <span>ランク変更:</span>
+                <button class="rank-btn" data-changer="A" onclick="changeRank('A')">A 完璧</button>
+                <button class="rank-btn" data-changer="B" onclick="changeRank('B')">B 安心</button>
+                <button class="rank-btn" data-changer="C" onclick="changeRank('C')">C 不安</button>
+                <button class="rank-btn" data-changer="D" onclick="changeRank('D')">D 不正解</button>
+                <button class="rank-btn" data-changer="F" onclick="changeRank('F')">F 未回答</button>
+            </div>
+
+            <!-- 次へボタン -->
+            <button class="btn next-btn" onclick="nextQuestion()">次の問題へ ➔</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ★ここにGASのウェブアプリURLを貼り付けてください
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwl81UHIdrlDvftLNC5_ai6u0B_88Jt1Pa1IAkST89CQPuXR0UjKAx2WzkSPHGznyuP/exec";
+
+    let allQuestions = [];
+    let filteredQuestions = [];
+    let currentIndex = 0;
+    let currentQuestion = null;
+    let selectedRanks = new Set(["ALL"]);
+    let selectedSections = new Set(); 
+
+    const CHAPTER_NAMES = {
+        "1": "第1章 労働基準法",
+        "2": "第2章 労働安全衛生法",
+        "3": "第3章 労働者災害補償保険法",
+        "4": "第4章 雇用保険法",
+        "5": "第5章 労働保険徴収法",
+        "6": "第6章 健康保険法",
+        "7": "第7章 国民年金法",
+        "8": "第8章 厚生年金保険法",
+        "9": "第9章 労務管理その他の労働に関する一般常識",
+        "10": "第10章 社会保険に関する一般常識"
+    };
+
+    const SECTION_NAMES = {
+        "1": {
+            "1": "01 総則(P12〜P31)", "2": "02 労働契約(P34〜P67)", "3": "03 賃金(P70〜P89)",
+            "4": "04 労働時間‧休憩‧休日(P92〜P163)", "5": "05 年次有給休暇(P166〜P183)",
+            "6": "06 年少者‧妊産婦等の保護(P186〜P203)", "7": "07 技能者の養成(P206〜P207)",
+            "8": "08 災害補償(P210〜P213)", "9": "09 就業規則(P216〜P227)",
+            "10": "10 寄宿舎(P230〜P233)", "11": "11 監督機関‧雑則‧罰則(P236〜P245）"
+        },
+        "2": {
+            "1": "01 総 則(P13〜19)", "2": "02 労働災害防止計画(P22)", "3": "03 安全衛生管理体制(P26〜67)",
+            "4": "04 労働者の危険⼜は健康障害を防⽌するための措置(P70〜81)", "5": "05 機械等並びに危険物及び有害物に関する規制(P84〜107)",
+            "6": "06 労働者の就業に当たっての措置(P110〜120)", "7": "07 健康の保持増進のための措置等(P124〜159)",
+            "8": "08 事業場の安全⼜は衛⽣に関する改善措置等(P162〜165)", "9": "09 監督等(P168〜179）"
+        },
+        "3": {
+            "1": "01 総 則(P12〜21)", "2": "02 災害の認定(P24〜49)", "3": "03 給付基礎日額(P52〜66)",
+            "4-1": "04-1 業務災害に係る保険給付(P70〜87)", "4-2": "04-2 業務災害に係る保険給付(P88〜104)", "4-3": "04-3 業務災害に係る保険給付(P105〜119)",
+            "5": "05 複数業務要因災害に関する保険給付(P122〜125)", "6": "06 通勤災害に係る保険給付(P128〜132)",
+            "7": "07 ⼆次健康診断等給付(P136〜138)", "8": "08 通則等(P142〜169)",
+            "9": "09 社会復帰促進等事業(P172〜185)", "10": "10 特別加入(P188〜204)",
+            "11": "11 不服申立て‧雑則等(P208〜219）"
+        },
+        "4": {
+            "1": "01 総則等(P12〜17)", "2-1": "02-1 適用事業等(P20〜31)", "2-2": "02-2 適用事業等(P32〜53)",
+            "3": "03 通則(P56〜63)", "4-1": "04-1 一般被保険者の求職者給付(P66〜88)", "4-2": "04-2 一般被保険者の求職者給付(P89〜121)", "4-3": "04-3 一般被保険者の求職者給付(P122〜128)",
+            "5": "05 高年齢被保険者の求職者給付(P132〜135)", "6": "06 短期雇用特例被保険者の求職者給付(P138〜142)",
+            "7": "07 日雇労働被保険者の求職者給付(P146〜153)", "8": "08 就職促進給付(P156〜173)",
+            "9": "09 教育訓練給付(P176〜199)", "10": "10 雇用継続給付(P202〜217)",
+            "11": "11 育児休業給付(P220〜243)", "12": "12 雇用保険二事業(P246〜252)",
+            "13": "13 費用の負担‧不服申立て‧雑則等(P256〜266）"
+        },
+        "5": {
+            "1": "01 総則(P12〜21)", "2-1": "02-1 労働保険の適⽤(P24〜33)", "2-2": "02-2 労働保険の適⽤(P34〜45)",
+            "3": "03 労働保険料(P48〜67)", "4": "04 労働保険料の申告及び納付(P70〜102)",
+            "5": "05 メリット制(P106〜117)", "6": "06 印紙保険料(P120〜127)",
+            "7": "07 追徴金‧特例納付保険料‧督促等(P130〜141)", "8": "08 労働保険事務組合(P144〜155)",
+            "9": "09 雑則等(P158〜163）"
+        },
+        "6": {
+            "1": "01 総則等(P12〜45)", "2-1": "02-1 適用事業所‧被保険者等(P48〜66)", "2-2": "02-2 適用事業所‧被保険者等(P67〜71)", "2-3": "02-3 適用事業所‧被保険者等(P72〜77)",
+            "3": "03 標準報酬(P80〜105)", "4-1": "04-1 被保険者に関する保険給付(P108〜131)", "4-2": "04-2 被保険者に関する保険給付(P132〜153)", "4-3": "04-3 被保険者に関する保険給付(P154〜171)", "4-4": "04-4 被保険者に関する保険給付(P172〜179)",
+            "5": "05 被扶養者に関する保険給付(P182〜187)", "6": "06 高額療養費(P190〜205)",
+            "7": "07 通則(P208〜217)", "8": "08 日雇特例被保険者(P220〜234）"
+        },
+        "7": {
+            "1": "01 総則等(P14〜34)", "2-1": "02-1 被保険者等(P38〜53)", "2-2": "02-2 被保険者等(P54〜75)",
+            "3-1": "03-1 給付の通則(P78〜97)", "3-2": "03-2 給付の通則(P98〜104)",
+            "4-1": "04-1 老齢基礎年金(P108〜118)", "4-2": "04-2 老齢基礎年金(P119〜127)", "4-3": "04-3 老齢基礎年金(P128〜140)",
+            "5": "05 付加年金(P144〜145)", "6": "06 障害基礎年金(P148〜167)",
+            "7": "07 遺族基礎年金(P170〜179)", "8": "08 寡婦年金‧死亡⼀時金(P182〜188）",
+            "9": "09 その他の給付・給付制限(P192〜197）", "10": "10 国民年金事業の円滑な実施を図るための措置(P200)",
+            "11": "11 費用(P204〜247)", "12": "12 不服申立て‧雑則等(P250〜258)",
+            "13": "13 国民年金基金‧国民年金基金連合会(P262〜277)"
+        },
+        "8": {
+            "1": "01 総則等(P14〜23)", "2": "02 適用事業所‧被保険者等(P26〜51)", "3": "03 標準報酬(P54〜70)",
+            "4": "04 保険給付の通則(P74〜89)", "5-1": "05-1 老齢厚生年金等(P92〜122)", "5-2": "05-2 老齢厚生年金等(P123〜155)",
+            "6": "06 障害厚生年金(P158〜173)", "7": "07 障害手当金(P176〜178)",
+            "8": "08 遺族厚生年金等(P182〜201)", "9": "09 その他の保険給付‧給付制限(P204〜212)",
+            "10": "10 離婚等をした場合における特例(P216〜223）", "11": "11 被扶養配偶者である期間についての特例(P226〜233）",
+            "12": "12 厚生年金保険事業の円滑な実施を図るための措置(P236)", "13": "13 費用の負担(P240〜257)", "14": "14 不服申立て‧雑則等(P260〜282）"
+        },
+        "9": {
+            "1-1": "01-1 職業安定に関係する法規(P12〜43)", "1-2": "01-2 職業安定に関係する法規(P44〜83)", "1-3": "01-3 職業安定に関係する法規(P84〜114)",
+            "2": "02 雇用環境‧均等に関係する法規(P118〜197)", "3": "03 賃金に関係する法規(P200〜215)",
+            "4": "04 労使に関係する法規(P218〜251)", "5": "05 その他の法規(P254〜264)",
+            "6": "06 労務管理(P268〜295)", "7": "07 労働経済(P298〜312）"
+        },
+        "10": {
+            "1": "01 社会保険の概要(P10〜26)", "2": "02 国民健康保険法(P28〜60)",
+            "3": "03 高齢者の医療の確保に関する法律(P64〜98)", "4": "04 介護保険法(P102〜147)",
+            "5": "05 船員保険法(P150〜165)", "6": "06 児童手当法(P168〜183)",
+            "7": "07 社会保険労務⼠法(P186〜215)", "8": "08 確定給付企業年⾦法(P218〜233）",
+            "9": "09 確定拠出年金法(P236〜258）", "10": "10 社会保険審査官及び社会保険審査会法(P262〜266）"
+        }
+    };
+
+    function getChapterName(rawCh) {
+        let key = String(rawCh || "").replace(/[^0-9]/g, "");
+        return CHAPTER_NAMES[key] || rawCh;
+    }
+
+    function getSectionName(rawCh, rawSec) {
+        let chKey = String(rawCh || "").replace(/[^0-9]/g, "");
+        let secKey = String(rawSec || "").trim();
+        if (SECTION_NAMES[chKey] && SECTION_NAMES[chKey][secKey]) {
+            return SECTION_NAMES[chKey][secKey];
+        }
+        return rawSec;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+        fetchData();
+    });
+
+    function toggleTreeContainer() {
+        const container = document.getElementById("checkbox-tree");
+        const arrow = document.getElementById("tree-arrow");
+        container.classList.toggle("open");
+        if (container.classList.contains("open")) {
+            arrow.innerText = "▲";
+        } else {
+            arrow.innerText = "▼";
+        }
+    }
+
+    function fetchData() {
+        if (!WEB_APP_URL || WEB_APP_URL.includes("ここに")) {
+            document.getElementById("loading-view").innerHTML = "<p style='color:red;'>エラー: GASのWEB_APP_URLが正しく設定されていません。</p>";
+            return;
+        }
+
+        fetch(WEB_APP_URL)
+            .then(response => response.json())
+            .then(data => {
+                allQuestions = data;
+                document.getElementById("loading-view").classList.add("hidden");
+                document.getElementById("app-view").classList.remove("hidden");
+                
+                initFilters();
+                updateRankCounts();
+                applyFilters();
+            })
+            .catch(error => {
+                console.error("データ取得エラー:", error);
+                document.getElementById("loading-view").innerHTML = "<p style='color:red;'>データの取得に失敗しました。再読み込みしてください。</p>";
+            });
+    }
+
+    function updateRankCounts() {
+        const counts = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+        
+        allQuestions.forEach(q => {
+            const rank = (q.rank || "F").trim().toUpperCase();
+            if (counts[rank] !== undefined) {
+                counts[rank]++;
+            } else {
+                counts['F']++;
+            }
+        });
+
+        for (const [rank, count] of Object.entries(counts)) {
+            const el = document.getElementById(`count-${rank}`);
+            if (el) {
+                el.innerText = `(${count})`;
+            }
+        }
+    }
+
+    function initFilters() {
+        const treeContainer = document.getElementById("checkbox-tree");
+        treeContainer.innerHTML = "";
+
+        const structure = {};
+        allQuestions.forEach(q => {
+            let rawCh = q.chapter || "未分類";
+            let rawSec = q.section || "未分類";
+
+            let chName = getChapterName(rawCh);
+            let secName = getSectionName(rawCh, rawSec);
+
+            if (!structure[chName]) structure[chName] = new Set();
+            structure[chName].add(secName);
+        });
+
+        selectedSections.clear();
+
+        const sortedChapters = Object.keys(structure).sort((a, b) => {
+            let numA = parseInt(a.replace(/[^0-9]/g, "")) || 999;
+            let numB = parseInt(b.replace(/[^0-9]/g, "")) || 999;
+            return numA - numB;
+        });
+
+        sortedChapters.forEach(ch => {
+            const sections = Array.from(structure[ch]).sort((a, b) => {
+                let numA = parseFloat(a.replace(/[^0-9.-]/g, "")) || 0;
+                let numB = parseFloat(b.replace(/[^0-9.-]/g, "")) || 0;
+                return numA - numB;
+            });
+
+            const chLabel = document.createElement("label");
+            chLabel.className = "chapter-label";
+            chLabel.innerHTML = `<input type="checkbox" class="chapter-check" value="${ch}" checked onchange="onChapterChange(this)"> 📁 ${ch}`;
+            treeContainer.appendChild(chLabel);
+
+            const secContainer = document.createElement("div");
+            secContainer.style.marginLeft = "12px";
+
+            sections.forEach(sec => {
+                const key = `${ch}_${sec}`;
+                selectedSections.add(key);
+
+                const secLabel = document.createElement("label");
+                secLabel.className = "section-label";
+                secLabel.innerHTML = `<input type="checkbox" class="section-check" data-chapter="${ch}" value="${sec}" checked onchange="onSectionChange()"> 📄 ${sec}`;
+                secContainer.appendChild(secLabel);
+            });
+
+            treeContainer.appendChild(secContainer);
+        });
+
+        document.querySelectorAll(".rank-badge").forEach(badge => {
+            badge.addEventListener("click", (e) => {
+                const targetBadge = e.target.closest(".rank-badge");
+                if (!targetBadge) return;
+
+                const rank = targetBadge.getAttribute("data-rank");
+                if (rank === "ALL") {
+                    selectedRanks.clear();
+                    selectedRanks.add("ALL");
+                    document.querySelectorAll(".rank-badge").forEach(b => b.classList.remove("active"));
+                    targetBadge.classList.add("active");
+                } else {
+                    selectedRanks.delete("ALL");
+                    document.querySelector('[data-rank="ALL"]').classList.remove("active");
+                    
+                    if (selectedRanks.has(rank)) {
+                        selectedRanks.delete(rank);
+                        targetBadge.classList.remove("active");
+                        if (selectedRanks.size === 0) {
+                            selectedRanks.add("ALL");
+                            document.querySelector('[data-rank="ALL"]').classList.add("active");
+                        }
+                    } else {
+                        selectedRanks.add(rank);
+                        targetBadge.classList.add("active");
+                    }
+                }
+                applyFilters();
+            });
+        });
+    }
+
+    function onChapterChange(chCheckbox) {
+        const ch = chCheckbox.value;
+        const isChecked = chCheckbox.checked;
+        
+        document.querySelectorAll(`.section-check[data-chapter="${ch}"]`).forEach(secCb => {
+            secCb.checked = isChecked;
+            const key = `${ch}_${secCb.value}`;
+            if (isChecked) {
+                selectedSections.add(key);
+            } else {
+                selectedSections.delete(key);
+            }
+        });
+        applyFilters();
+    }
+
+    function onSectionChange() {
+        selectedSections.clear();
+        document.querySelectorAll(".section-check").forEach(secCb => {
+            if (secCb.checked) {
+                const ch = secCb.getAttribute("data-chapter");
+                selectedSections.add(`${ch}_${secCb.value}`);
+            }
+        });
+        applyFilters();
+    }
+
+    function applyFilters() {
+        filteredQuestions = allQuestions.filter(q => {
+            const qRank = (q.rank || "F").trim().toUpperCase();
+            const matchRank = selectedRanks.has("ALL") || selectedRanks.has(qRank);
+            
+            let chName = getChapterName(q.chapter);
+            let secName = getSectionName(q.chapter, q.section);
+            const matchSection = selectedSections.has(`${chName}_${secName}`);
+
+            return matchRank && matchSection;
+        });
+
+        currentIndex = 0;
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const choiceBtns = document.getElementById("choice-buttons");
+        const quickFeedback = document.getElementById("quick-feedback");
+        const resultBox = document.getElementById("result-box");
+        const hintBox = document.getElementById("hint-box");
+        const memoInput = document.getElementById("memo-input");
+
+        hintBox.style.display = "none";
+        hintBox.innerText = "";
+        quickFeedback.innerText = "";
+        resultBox.style.display = "none";
+
+        // ボタンの状態・ハイライトを初期化
+        const btnTrue = document.getElementById("btn-true-choice");
+        const btnFalse = document.getElementById("btn-false-choice");
+        btnTrue.disabled = false;
+        btnFalse.disabled = false;
+        btnTrue.classList.remove("user-choice", "correct-highlight");
+        btnFalse.classList.remove("user-choice", "correct-highlight");
+
+        if (filteredQuestions.length === 0) {
+            document.getElementById("q-id-info").innerText = "該当なし";
+            document.getElementById("q-progress").innerText = "0 / 0 問";
+            document.getElementById("q-text").innerText = "条件に一致する問題がありません。フィルター条件を変更してください。";
+            choiceBtns.classList.add("hidden");
+            resultBox.style.display = "none";
+            memoInput.value = "";
+            return;
+        }
+
+        if (currentIndex >= filteredQuestions.length) {
+            currentIndex = 0;
+        }
+
+        currentQuestion = filteredQuestions[currentIndex];
+
+        let chName = getChapterName(currentQuestion.chapter);
+        let secName = getSectionName(currentQuestion.chapter, currentQuestion.section);
+
+        document.getElementById("q-id-info").innerText = `ID: ${currentQuestion.id} | ${chName} ＞ ${secName} (ランク: ${currentQuestion.rank || "F"})`;
+        document.getElementById("q-progress").innerText = `${currentIndex + 1} / ${filteredQuestions.length} 問`;
+        document.getElementById("q-text").innerText = currentQuestion.text;
+
+        memoInput.value = currentQuestion.memo || "";
+        updateRankButtonUI(currentQuestion.rank || "F");
+
+        if (currentQuestion.hint && currentQuestion.hint.trim() !== "") {
+            hintBox.innerText = currentQuestion.hint;
+        } else {
+            hintBox.innerText = "この問題のヒントは登録されていません。";
+        }
+        
+        choiceBtns.classList.remove("hidden");
+        document.getElementById("stats-info").innerText = `対象: ${filteredQuestions.length}問`;
+    }
+
+    function updateMemo(val) {
+        if (currentQuestion) {
+            currentQuestion.memo = val;
+        }
+    }
+
+    function changeRank(newRank) {
+        if (currentQuestion) {
+            currentQuestion.rank = newRank;
+            updateRankButtonUI(newRank);
+            let chName = getChapterName(currentQuestion.chapter);
+            let secName = getSectionName(currentQuestion.chapter, currentQuestion.section);
+            document.getElementById("q-id-info").innerText = `ID: ${currentQuestion.id} | ${chName} ＞ ${secName} (ランク: ${newRank})`;
+            updateRankCounts();
+        }
+    }
+
+    function updateRankButtonUI(activeRank) {
+        document.querySelectorAll(".rank-btn").forEach(btn => {
+            if (btn.getAttribute("data-changer") === activeRank.toUpperCase()) {
+                btn.classList.add("current");
+            } else {
+                btn.classList.remove("current");
+            }
+        });
+    }
+
+    function toggleHint() {
+        const hintBox = document.getElementById("hint-box");
+        if (hintBox.style.display === "block") {
+            hintBox.style.display = "none";
+        } else {
+            hintBox.style.display = "block";
+        }
+    }
+
+    function answerQuestion(userAnswer) {
+        const quickFeedback = document.getElementById("quick-feedback");
+        const resultBox = document.getElementById("result-box");
+        const qExplanation = document.getElementById("q-explanation");
+        const hintBox = document.getElementById("hint-box");
+
+        hintBox.style.display = "none";
+
+        const btnTrue = document.getElementById("btn-true-choice");
+        const btnFalse = document.getElementById("btn-false-choice");
+
+        // 回答後はボタンをロック
+        btnTrue.disabled = true;
+        btnFalse.disabled = true;
+
+        // 1. ユーザーが選んだボタンを強調
+        if (userAnswer === true) {
+            btnTrue.classList.add("user-choice");
+        } else {
+            btnFalse.classList.add("user-choice");
+        }
+
+        // 2. 正解のボタンを緑枠でハイライト
+        if (currentQuestion.answer === true) {
+            btnTrue.classList.add("correct-highlight");
+        } else {
+            btnFalse.classList.add("correct-highlight");
+        }
+
+        const isCorrect = (userAnswer === currentQuestion.answer);
+
+        if (isCorrect) {
+            currentQuestion.rank = "C"; // C 不安（正解時はCに更新等、既存仕様）
+            quickFeedback.innerText = "正解！";
+            quickFeedback.className = "quick-feedback correct";
+        } else {
+            currentQuestion.rank = "D"; // D 不正解
+            quickFeedback.innerText = "不正解";
+            quickFeedback.className = "quick-feedback incorrect";
+        }
+
+        qExplanation.innerText = currentQuestion.explanation || "解説はありません。";
+        resultBox.style.display = "block";
+
+        let chName = getChapterName(currentQuestion.chapter);
+        let secName = getSectionName(currentQuestion.chapter, currentQuestion.section);
+        document.getElementById("q-id-info").innerText = `ID: ${currentQuestion.id} | ${chName} ＞ ${secName} (ランク: ${currentQuestion.rank})`;
+        
+        updateRankButtonUI(currentQuestion.rank);
+        updateRankCounts();
+    }
+
+    function nextQuestion() {
+        if (!currentQuestion) return;
+
+        const payload = {
+            id: currentQuestion.id,
+            rank: currentQuestion.rank || "F",
+            memo: currentQuestion.memo || ""
+        };
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            console.log("クラウド保存成功:", res);
+        })
+        .catch(err => {
+            console.error("クラウド保存失敗:", err);
+        });
+
+        currentIndex++;
+        showQuestion();
+    }
+
+    function copyLearningDataForAI() {
+        if (!allQuestions || allQuestions.length === 0) {
+            alert("データが読み込まれていません。");
+            return;
+        }
+
+        let exportText = "【社労士試験 一問一答 学習履歴データ】\n";
+        exportText += "以下の私の学習状況を分析し、どの章・項目に弱点があるか、今後の対策アドバイスを教えてください。\n\n";
+
+        allQuestions.forEach((q) => {
+            let ch = getChapterName(q.chapter);
+            let sec = getSectionName(q.chapter, q.section);
+            let rank = q.rank || "F";
+            let memo = q.memo ? `（メモ: ${q.memo}）` : "";
+
+            exportText += `[ID: ${q.id}] ${ch} > ${sec} | ランク: ${rank} | 問題: ${q.text} ${memo}\n`;
+        });
+
+        navigator.clipboard.writeText(exportText).then(() => {
+            alert("🤖 AI分析用の学習データをコピーしました！\nAIのチャット欄にそのまま貼り付けて（Ctrl+V等）分析を依頼してください。");
+        }).catch(err => {
+            console.error("コピー失敗:", err);
+            alert("コピーに失敗しました。");
+        });
+    }
+</script>
+
+</body>
+</html>
