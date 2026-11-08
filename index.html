@@ -68,9 +68,12 @@
             color: #64748b;
         }
 
-        /* フィルター・ダッシュボードエリア */
+/* フィルター・ダッシュボードエリア */
         .filter-section {
-            margin-bottom: 12px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            margin-bottom: 16px;
             padding: 12px 16px;
         }
         .filter-section h3 {
@@ -83,24 +86,81 @@
             display: flex;
             gap: 6px;
             flex-wrap: wrap;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
+        /* フィルターボタン（基本のデザイン） */
         .rank-badge {
-            padding: 4px 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: bold;
             cursor: pointer;
-            border: 1px solid var(--border-color);
-            background: #f1f5f9;
+            border: 1.5px solid #e5e7eb;
+            background: #f9fafb;
+            color: #374151;
             transition: all 0.2s;
         }
-        .rank-badge.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
+
+        .rank-badge .count-badge {
+            font-size: 0.7rem;
+            opacity: 0.8;
+            font-weight: normal;
         }
+
+        /* --- ランクごとの色分け設定 --- */
+        .rank-badge[data-rank="ALL"].active { background: #1f2937; color: white; border-color: #1f2937; }
+
+        .rank-badge[data-rank="A"] { border-color: #10b981; color: #047857; }
+        .rank-badge[data-rank="A"].active { background: #10b981; color: white; }
+
+        .rank-badge[data-rank="B"] { border-color: #3b82f6; color: #1d4ed8; }
+        .rank-badge[data-rank="B"].active { background: #3b82f6; color: white; }
+
+        .rank-badge[data-rank="C"] { border-color: #f59e0b; color: #b45309; }
+        .rank-badge[data-rank="C"].active { background: #f59e0b; color: white; }
+
+        .rank-badge[data-rank="D"] { border-color: #f97316; color: #c2410c; }
+        .rank-badge[data-rank="D"].active { background: #f97316; color: white; }
+
+        .rank-badge[data-rank="F"] { border-color: #6b7280; color: #374151; }
+        .rank-badge[data-rank="F"].active { background: #6b7280; color: white; }
+
+
+       /* --- 下部の横棒グラフ（プログレスバー）のデザイン --- */
+
+/* バー全体の外枠（背景色をここに持たせるのが確実です） */
+.rank-progress-wrapper {
+    width: 100%;
+    height: 10px;
+    background: #e5e7eb; /* データがない時や余白の背景色 */
+    border-radius: 5px;
+    overflow: hidden;
+    display: flex;
+}
+
+/* JavaScriptで動的にセグメントを並べるコンテナ */
+.rank-progress-bar {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* 各ランクのバーパーツ */
+.progress-segment {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+        /* 横棒グラフのランク別カラー */
+        .progress-segment.rank-A { background-color: #10b981; }
+        .progress-segment.rank-B { background-color: #3b82f6; }
+        .progress-segment.rank-C { background-color: #f59e0b; }
+        .progress-segment.rank-D { background-color: #f97316; }
+        .progress-segment.rank-F { background-color: #9ca3af; }
 
         /* アコーディオン形式の出題範囲セクション */
         .tree-toggle-header {
@@ -387,17 +447,27 @@
 
     <!-- アプリ本体 -->
     <div id="app-view" class="hidden">
-        <!-- フィルター設定カード -->
-        <div class="card filter-section">
-            <h3>ランクフィルター</h3>
-            <div class="rank-badges" id="rank-filters">
-                <span class="rank-badge active" data-rank="ALL">すべて</span>
-                <span class="rank-badge" data-rank="A">A 完璧 <span id="count-A">0</span></span>
-                <span class="rank-badge" data-rank="B">B 安心 <span id="count-B">0</span></span>
-                <span class="rank-badge" data-rank="C">C 不安 <span id="count-C">0</span></span>
-                <span class="rank-badge" data-rank="D">D 不正解 <span id="count-D">0</span></span>
-                <span class="rank-badge" data-rank="F">F 未回答 <span id="count-F">0</span></span>
+       <!-- フィルター設定カード -->
+    <div class="card filter-section">
+        <h3>ランクフィルター</h3>
+        
+        <!-- 1. フィルターボタンが並ぶ場所（idはプログラムに合わせて "rank-filters" のままにしています） -->
+        <div class="rank-badges" id="rank-filters">
+            <span class="rank-badge active" data-rank="ALL">すべて</span>
+            <span class="rank-badge" data-rank="A">A 完璧 <span id="count-A">0</span></span>
+            <span class="rank-badge" data-rank="B">B 安心 <span id="count-B">0</span></span>
+            <span class="rank-badge" data-rank="C">C 不安 <span id="count-C">0</span></span>
+            <span class="rank-badge" data-rank="D">D 不正解 <span id="count-D">0</span></span>
+            <span class="rank-badge" data-rank="F">F 未回答 <span id="count-F">0</span></span>
+        </div>
+
+        <!-- 2. 【新しく追加】ボタンの下に、全ランクの割合がひと目でわかる横棒グラフの箱 -->
+        <div class="rank-progress-wrapper">
+            <div class="rank-progress-bar" id="rankProgressBar">
+                <!-- ここにJavaScriptが、カラフルな横棒グラフのパーツを自動で作ってくれます -->
             </div>
+        </div>
+    </div>
 
             <!-- 出題範囲（アコーディオン式） -->
             <div class="tree-toggle-header" onclick="toggleTreeContainer()">
@@ -637,6 +707,38 @@
                 el.innerText = `(${count})`;
             }
         }
+
+        // ★ここから下が、横棒プログレスバーを自動で組み立てる新しい処理です
+        const progressBar = document.getElementById('rankProgressBar');
+        if (progressBar) {
+            progressBar.innerHTML = ''; // 一旦きれいにする
+
+            const total = allQuestions.length; // 全問題数
+            if (total > 0) {
+                // CSSのクラス名に合わせたランクの順番
+                const ranks = ['A', 'B', 'C', 'D', 'F'];
+                
+                ranks.forEach(rank => {
+                    const count = counts[rank];
+                    if (count > 0) {
+                        const percentage = (count / total) * 100;
+
+                        // グラフのパーツ（div）を作る
+                        const segment = document.createElement('div');
+                        // HTML/CSS側で用意したクラス名を付与（例: progress-segment rank-A）
+                        segment.className = `progress-segment rank-${rank}`;
+                        // 幅（%）を設定
+                        segment.style.width = `${percentage.toFixed(1)}%`;
+                        // マウスを乗せたときに詳細が出るようにする
+                        segment.title = `${rank}ランク: ${count}件 (${percentage.toFixed(1)}%)`;
+
+                        // グラフの箱に追加
+                        progressBar.appendChild(segment);
+                    }
+                });
+            }
+        }
+        // ★ここまで
     }
 
     function initFilters() {
