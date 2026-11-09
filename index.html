@@ -912,7 +912,7 @@
 
         document.getElementById("q-id-info").innerText = `ID: ${currentQuestion.id} | ${chName} ＞ ${secName} (ランク: ${currentQuestion.rank || "F"})`;
         document.getElementById("q-progress").innerText = `${currentIndex + 1} / ${filteredQuestions.length} 問`;
-        document.getElementById("q-text").innerText = currentQuestion.text;
+        document.getElementById("q-text").innerText = currentQuestion.question;
 
         memoInput.value = currentQuestion.memo || "";
         updateRankButtonUI(currentQuestion.rank || "F");
