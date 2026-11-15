@@ -678,12 +678,14 @@
         fetch(WEB_APP_URL)
             .then(response => response.json())
             .then(data => {
-                // ★ここで自然順ソートを実行する
+                // 章（chapter）とセクション（section）を自然順で確実にソートする
                 data.sort((a, b) => {
-                    if (a.chapter !== b.chapter) {
-                        return Number(a.chapter) - Number(b.chapter);
+                    const chA = Number(a.chapter) || 0;
+                    const chB = Number(b.chapter) || 0;
+                    if (chA !== chB) {
+                        return chA - chB;
                     }
-                    return String(a.section).localeCompare(String(b.section), 'ja', { numeric: true });
+                    return String(a.section || "").localeCompare(String(b.section || ""), 'ja', { numeric: true });
                 });
 
                 allQuestions = data;
