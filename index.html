@@ -678,6 +678,14 @@
         fetch(WEB_APP_URL)
             .then(response => response.json())
             .then(data => {
+                // ★ここで自然順ソートを実行する
+                data.sort((a, b) => {
+                    if (a.chapter !== b.chapter) {
+                        return Number(a.chapter) - Number(b.chapter);
+                    }
+                    return String(a.section).localeCompare(String(b.section), 'ja', { numeric: true });
+                });
+
                 allQuestions = data;
                 document.getElementById("loading-view").classList.add("hidden");
                 document.getElementById("app-view").classList.remove("hidden");
